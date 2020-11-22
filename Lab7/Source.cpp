@@ -8,9 +8,15 @@ enum orientation {UP, DOWN, LEFT, RIGHT};
 
 enum shiptype { DESTROYER, SUBMARINE, CRUSIER, BATTLESHIP, CARRIER };
 
-void ComputerSetUp();
+void ComputerSetUp(char guessGrid[][10], char shipGrid[][10]);
 
-void UserSetUp();
+void UserSetUp(char guessGrid[][10], char shipGrid[][10]);
+
+void Instructions();
+
+void ComputerTurn(char userShipGrid[][10], char computerGuessGrid[][10]);
+
+void Fire(char shipGrid[][10], char computerGuessGrid[][10]);
 
 void GenerateComputerGrid(char waterArray[][10]);
 
@@ -46,42 +52,89 @@ int main()
 {
 	srand(unsigned int(time(NULL)));
 
-	ComputerSetUp();
+	char computerGuessGrid[10][10];
+	char computerShipGrid[10][10];
 
-	//User set up
-	UserSetUp();
+	char userGuessGrid[10][10];
+	char userShipGrid[10][10];
+
+	bool isNewGame;
+	bool isEndOfGame;
+	int numOfGames = 1;
+	do
+	{
+		if (numOfGames == 1)
+		{
+			//Instructions();
+		}
+
+		isNewGame = false;
+		//Initializes and populates computer's board
+		ComputerSetUp(computerGuessGrid, computerShipGrid);
+
+		//Initializes and allows user to place their ships
+		UserSetUp(userGuessGrid, userShipGrid);
+
+		isEndOfGame = false;
+
+		do
+		{
+
+
+		} while (isEndOfGame);
+	} while (isNewGame);
+	
 
 	return 0;
 }
 
-void ComputerSetUp()
+void ComputerSetUp(char guessGrid[][10], char shipGrid[][10])
 {
-	char computerGuessGrid[10][10];
-	char computerShipGrid[10][10];
 
 	//Sets empty 10 x 10 array to water ('~') for computer guess grid
-	InitializeDefaultBoard(computerGuessGrid);
+	InitializeDefaultBoard(guessGrid);
 
 	//Sets empty 10 x 10 array to water ('~')
-	InitializeDefaultBoard(computerShipGrid);
+	InitializeDefaultBoard(shipGrid);
 
 	//Randomly select 5 places on the water grid to place a ship
-	GenerateComputerGrid(computerShipGrid);
+	GenerateComputerGrid(shipGrid);
 }
 
-void UserSetUp()
+void UserSetUp(char guessGrid[][10], char shipGrid[][10])
 {
-	char userGuessGrid[10][10];
-	char userShipGrid[10][10];
 
 	//Initialize user's guess grid to water ('~')
-	InitializeDefaultBoard(userGuessGrid);
+	InitializeDefaultBoard(guessGrid);
 
 	//Initialize user's ship grid to water ('~')
-	InitializeDefaultBoard(userShipGrid);
+	InitializeDefaultBoard(shipGrid);
 
 	//Allows user to place ships and validates ship positions at the same time
-	UserShipPlacement(userShipGrid);
+	UserShipPlacement(shipGrid);
+}
+
+void Instructions()
+{
+
+}
+
+void ComputerTurn(char userShipGrid[][10], char computerGuessGrid[][10])
+{
+	Fire(userShipGrid, computerGuessGrid);
+}
+
+void Fire(char shipGrid[][10], char computerGuessGrid[][10])
+{
+	int ranXCoordinate = rand() % 10;
+	int ranYCoordinate = rand() % 10;
+
+	if (shipGrid[ranXCoordinate][ranYCoordinate] == '#')
+	{
+		computerGuessGrid[ranXCoordinate][ranYCoordinate] = 'H';
+	}
+	else
+		computerGuessGrid[ranXCoordinate][ranYCoordinate] = 'M';
 }
 
 void UserShipPlacement(char waterArray[][10])
