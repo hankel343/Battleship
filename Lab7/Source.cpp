@@ -14,9 +14,11 @@ void UserSetUp(char guessGrid[][10], char shipGrid[][10]);
 
 void Instructions();
 
-void ComputerTurn(char userShipGrid[][10], char computerGuessGrid[][10]);
+void ComputerTurn(char shipGrid[][10], char guessGrid[][10], int& computerHits);
 
-void Fire(char shipGrid[][10], char computerGuessGrid[][10]);
+void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits);
+
+bool Fire(char shipGrid[][10], char computerGuessGrid[][10], int xcoordinate, int ycoordinate);
 
 void GenerateComputerGrid(char waterArray[][10]);
 
@@ -61,6 +63,9 @@ int main()
 	bool isNewGame;
 	bool isEndOfGame;
 	int numOfGames = 1;
+
+	int userHits = 0;
+	int computerHits = 0;
 	do
 	{
 		if (numOfGames == 1)
@@ -79,9 +84,17 @@ int main()
 
 		do
 		{
+			ComputerTurn(userShipGrid, computerGuessGrid, computerHits);
+
+			UserTurn(computerShipGrid, userGuessGrid, userHits);
+
+			if (computerHits == 17 || userHits == 17)
+			{
+				isEndOfGame = true;
+			}
 
 
-		} while (isEndOfGame);
+		} while (!isEndOfGame);
 	} while (isNewGame);
 	
 
@@ -119,22 +132,75 @@ void Instructions()
 
 }
 
-void ComputerTurn(char userShipGrid[][10], char computerGuessGrid[][10])
-{
-	Fire(userShipGrid, computerGuessGrid);
-}
-
-void Fire(char shipGrid[][10], char computerGuessGrid[][10])
+void ComputerTurn(char shipGrid[][10], char guessGrid[][10], int& computerHits)
 {
 	int ranXCoordinate = rand() % 10;
 	int ranYCoordinate = rand() % 10;
 
-	if (shipGrid[ranXCoordinate][ranYCoordinate] == '#')
+	if (Fire(shipGrid, guessGrid, ranXCoordinate, ranYCoordinate) == true)
 	{
-		computerGuessGrid[ranXCoordinate][ranYCoordinate] = 'H';
+		cout << "\nThe computer landed a hit!\n\n";
+		computerHits++;
+	}
+
+	cout << "This is the computer's guess grid: \n";
+	PrintBoard(guessGrid);
+}
+
+void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits)
+{
+	int xcoordinate;
+	int ycoordinate;
+
+	cout << "\n\nThis is your guess grid: \n";
+
+	PrintBoard(guessGrid);
+
+	cout << "\n\nEnter the x-coordinate you want to fire on: ";
+	cin >> xcoordinate;
+
+	while (!cin || xcoordinate < 1 || xcoordinate > 10)
+	{
+		cin.clear();
+		cin.ignore(1000, '\n');
+
+		InvalidInputMessage();
+		cin >> xcoordinate;
+	}
+
+	cout << "\n\nEnter the y-coordinate you want to fire on: ";
+	cin >> ycoordinate;
+
+	while (!cin || ycoordinate < 1 || ycoordinate > 10)
+	{
+		cin.clear();
+		cin.ignore(1000, '\n');
+
+		InvalidInputMessage();
+		cin >> ycoordinate;
+	}
+
+	if (Fire(shipGrid, guessGrid, xcoordinate, ycoordinate) == true)
+	{
+		cout << "\n\nYou landed a hit!\n";
+		userHits++;
 	}
 	else
-		computerGuessGrid[ranXCoordinate][ranYCoordinate] = 'M';
+		cout << "\n\nYou missed!\n";
+}
+
+bool Fire(char shipGrid[][10], char guessGrid[][10], int xcoordinate, int ycoordinate)
+{
+	if (shipGrid[ycoordinate - 1][xcoordinate - 1] == '#')
+	{
+		guessGrid[ycoordinate - 1][xcoordinate - 1] = 'H';
+		return true;
+	}
+	else
+	{
+		guessGrid[ycoordinate - 1][xcoordinate - 1] = 'M';
+		return false;
+	}
 }
 
 void UserShipPlacement(char waterArray[][10])
@@ -178,7 +244,7 @@ void UserShipPlacement(char waterArray[][10])
 		case CRUSIER:
 			shipLength = 3;
 
-			cout << "\n\nPlace your carrier (3 places)";
+			cout << "\n\nPlace your crusier (3 places)";
 
 			ValidateUserInput(waterArray, shipLength, row, column, shipOrientation);
 
@@ -411,6 +477,7 @@ bool IsComputerShipOverlap(char array[][10], int ranRowsorColumns, int shipLengt
 
 void ValidateUserInput(char waterArray[][10], int& shipLength, int& row, int& column, string& shipOrientation)
 {
+	//This bool is a loop control that is set to true if the user has overlapping ships or out-of-bounds ships
 	bool isInvalidInput;
 
 	do
@@ -444,12 +511,16 @@ void ValidateUserInput(char waterArray[][10], int& shipLength, int& row, int& co
 		cout << "\nEnter the orientation you want your ship to have (\"up\", \"down\", \"left\", or \"right\"): ";
 		cin >> shipOrientation;
 
-		bool isInvalidDirection = false; //Used for following do-while loop if user enters any char other than up, down, left, or right
-
-		do
+		//While the first letter of shipOrientation string is NOT equal to U, D, R, or L
+		while (toupper(shipOrientation[0]) != 'U' && toupper(shipOrientation[0]) != 'D' && toupper(shipOrientation[0]) != 'L' && toupper(shipOrientation[0]) != 'R') 
 		{
-			switch (toupper(shipOrientation[0]))
-			{
+			cout << "\n\nInvalid input - input should be one of the following (\"up\", \"down\", \"left\", or \"right\")\a\n";
+			cout << "Try again: ";
+			cin >> shipOrientation;
+		}
+
+		switch (toupper(shipOrientation[0]))
+		{
 			case 'U':
 
 				if (IsOutOfBounds(row - 1, column - 1, shipLength, UP) == true)
@@ -472,7 +543,7 @@ void ValidateUserInput(char waterArray[][10], int& shipLength, int& row, int& co
 					PlaceUserShip(waterArray, row - 1, column - 1, shipLength, UP);
 				}
 
-				break;
+			break;
 
 			case 'D':
 
@@ -497,7 +568,8 @@ void ValidateUserInput(char waterArray[][10], int& shipLength, int& row, int& co
 				{
 					PlaceUserShip(waterArray, row - 1, column - 1, shipLength, DOWN);
 				}
-				break;
+
+			break;
 
 			case 'L':
 
@@ -522,7 +594,8 @@ void ValidateUserInput(char waterArray[][10], int& shipLength, int& row, int& co
 				{
 					PlaceUserShip(waterArray, row - 1, column - 1, shipLength, LEFT);
 				}
-				break;
+
+			break;
 
 			case 'R':
 
@@ -547,22 +620,9 @@ void ValidateUserInput(char waterArray[][10], int& shipLength, int& row, int& co
 				{
 					PlaceUserShip(waterArray, row - 1, column - 1, shipLength, RIGHT);
 				}
-				break;
 
-			default:
-				isInvalidDirection = true;
-
-				cout << "\n\nInvalid input - input should be one of the following (\"up\", \"down\", \"left\", or \"right\") \n";
-				cout << "Try again: ";
-				cin >> shipOrientation;
-
-				if (shipOrientation[0] == 'U' || 'D' || 'L' || 'R')
-				{
-					isInvalidDirection = false;
-				}
-			}
-		} while (isInvalidDirection);
-
+			break;
+		}
 	} while (isInvalidInput);
 }
 
@@ -697,7 +757,7 @@ void PlaceUserShip(char array[][10], int row, int column, int shipLength, orient
 void OutOfBoundsMessage()
 {
 	cout << "\n\n********************************************************************************************************";
-	cout << "\nThe coordinates you entered along with the ship orientation are outside of the bounds of the game board.\n";
+	cout << "\nThe coordinates you entered along with the ship orientation are outside of the bounds of the game board.\a\n";
 	cout << "Re-enter your ship coordinates with this in mind.\n";
 	cout << "********************************************************************************************************\n";
 }
@@ -705,7 +765,7 @@ void OutOfBoundsMessage()
 void InvalidInputMessage()
 {
 	cout << "\n************************************************************************\n";
-	cout << "Invalid data - your input should be an integer between 0 and 9 inclusive\n";
+	cout << "Invalid data - your input should be an integer between 1 and 10 inclusive\a\n";
 	cout << "************************************************************************\n";
 	cout << "Try again: ";
 }
@@ -713,7 +773,7 @@ void InvalidInputMessage()
 void OverlapMessage()
 {
 	cout << "\n\n*********************************************************************************************************";
-	cout << "\nThe coordinates you entered along with the ship orientation have over lap with another one of your ships. \n";
+	cout << "\nThe coordinates you entered along with the ship orientation have over lap with another one of your ships.\a\n";
 	cout << "Re-enter your ship coordinates with this in mind.\n";
 	cout << "*********************************************************************************************************\n";
 }
