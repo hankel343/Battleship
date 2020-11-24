@@ -26,7 +26,9 @@ void InitializeDefaultBoard(char emptyArray[][10]);
 
 void UserShipPlacement(char waterArray[][10]);
 
-void ValidateUserInput(char waterArray[][10], int& shipLength, int& row, int& column, string& shipOrientation);
+void ValidateUserInput(char waterArray[][10], int& shipLength);
+
+bool IsValidOrientation(char waterArray[][10], int row, int column, string shipOrientation, int shipLength);
 
 void PrintBoard(char array[][10]);
 
@@ -40,7 +42,7 @@ bool IsUserShipOverlap(char array[][10], int row, int column, int shipLength, or
 
 bool IsOutOfBounds(int row, int column, int shipLength, orientation shipDirection);
 
-void PlaceUserShip(char array[][10], int row, int column, int shipLength, orientation shipDirection);
+void PlaceUserShip(char array[][10], int row, int column, int shipLength, string shipOrientation);
 
 void OutOfBoundsMessage();
 
@@ -205,16 +207,16 @@ bool Fire(char shipGrid[][10], char guessGrid[][10], int xcoordinate, int ycoord
 
 void UserShipPlacement(char waterArray[][10])
 {
-	int shipLength;
-	int row;
-	int column;
-	string shipOrientation;
+	
+	
 
 	cout << "The computer has arranged its ships on the grid.\n";
 	cout << "You need to do the same with the following board: \n";
 
 	PrintBoard(waterArray);
 
+
+	int shipLength;
 	for (shiptype ship = DESTROYER; ship <= CARRIER; ship = shiptype(ship + 1))
 	{
 		switch (ship)
@@ -224,7 +226,7 @@ void UserShipPlacement(char waterArray[][10])
 
 			cout << "\n\nPlace your destroyer (2 places)";
 
-			ValidateUserInput(waterArray, shipLength, row, column, shipOrientation);
+			ValidateUserInput(waterArray, shipLength);
 
 			UpdatedBoardMessage();
 			PrintBoard(waterArray);
@@ -235,7 +237,7 @@ void UserShipPlacement(char waterArray[][10])
 
 			cout << "\n\nPlace your submarine (3 places)";
 
-			ValidateUserInput(waterArray, shipLength, row, column, shipOrientation);
+			ValidateUserInput(waterArray, shipLength);
 
 			UpdatedBoardMessage();
 			PrintBoard(waterArray);
@@ -246,7 +248,7 @@ void UserShipPlacement(char waterArray[][10])
 
 			cout << "\n\nPlace your crusier (3 places)";
 
-			ValidateUserInput(waterArray, shipLength, row, column, shipOrientation);
+			ValidateUserInput(waterArray, shipLength);
 
 			UpdatedBoardMessage();
 			PrintBoard(waterArray);
@@ -257,7 +259,7 @@ void UserShipPlacement(char waterArray[][10])
 
 			cout << "\n\nPlace your battleship (4 places)";
 
-			ValidateUserInput(waterArray, shipLength, row, column, shipOrientation);
+			ValidateUserInput(waterArray, shipLength);
 
 			UpdatedBoardMessage();
 			PrintBoard(waterArray);
@@ -268,7 +270,7 @@ void UserShipPlacement(char waterArray[][10])
 
 			cout << "\n\nPlace your carrier (5 places)";
 
-			ValidateUserInput(waterArray, shipLength, row, column, shipOrientation);
+			ValidateUserInput(waterArray, shipLength);
 
 			UpdatedBoardMessage();
 			PrintBoard(waterArray);
@@ -475,28 +477,21 @@ bool IsComputerShipOverlap(char array[][10], int ranRowsorColumns, int shipLengt
 	}
 }
 
-void ValidateUserInput(char waterArray[][10], int& shipLength, int& row, int& column, string& shipOrientation)
+void ValidateUserInput(char waterArray[][10], int& shipLength)
 {
 	//This bool is a loop control that is set to true if the user has overlapping ships or out-of-bounds ships
 	bool isInvalidInput;
+
+	//Identifiers for user input
+	int row;
+	int column;
+	string shipOrientation;
 
 	do
 	{
 		isInvalidInput = false;
 
-		cout << "\nEnter the starting row coordinate for your ship: ";
-		cin >> row;
-
-		while (!cin || row < 0 || row > 10)
-		{
-			cin.clear();
-			cin.ignore(1000, '\n');
-
-			InvalidInputMessage();
-			cin >> row;
-		}
-
-		cout << "\nEnter the starting column coordinate for your ship: ";
+		cout << "\nEnter the starting x-coordinate for your ship: ";
 		cin >> column;
 
 		while (!cin || column < 0 || column > 10)
@@ -506,6 +501,18 @@ void ValidateUserInput(char waterArray[][10], int& shipLength, int& row, int& co
 
 			InvalidInputMessage();
 			cin >> column;
+		}
+
+		cout << "\nEnter the starting y-coordinate for your ship: ";
+		cin >> row;
+
+		while (!cin || row < 0 || row > 10)
+		{
+			cin.clear();
+			cin.ignore(1000, '\n');
+
+			InvalidInputMessage();
+			cin >> row;
 		}
 
 		cout << "\nEnter the orientation you want your ship to have (\"up\", \"down\", \"left\", or \"right\"): ";
@@ -519,111 +526,80 @@ void ValidateUserInput(char waterArray[][10], int& shipLength, int& row, int& co
 			cin >> shipOrientation;
 		}
 
-		switch (toupper(shipOrientation[0]))
+		//These are decremented by one from the values the user entered (1 - 10). This way they function as indexes for the gameboard array which has valid indexes of 0 - 9 for the coming function calls.
+		row--;
+		column--;
+
+		//Checks for out of array bounds or ship overlap
+		isInvalidInput = IsValidOrientation(waterArray, row, column, shipOrientation, shipLength);
+
+		if (isInvalidInput == false)
 		{
-			case 'U':
 
-				if (IsOutOfBounds(row - 1, column - 1, shipLength, UP) == true)
-				{
-					isInvalidInput = true;
-
-					OutOfBoundsMessage();
-					PrintBoard(waterArray);
-				}
-
-				if (IsUserShipOverlap(waterArray, row - 1, column - 1, shipLength, UP) == true)
-				{
-					isInvalidInput = true;
-					OverlapMessage();
-					PrintBoard(waterArray);
-				}
-					
-				if (isInvalidInput == false)
-				{
-					PlaceUserShip(waterArray, row - 1, column - 1, shipLength, UP);
-				}
-
-			break;
-
-			case 'D':
-
-				if (IsOutOfBounds(row - 1, column - 1, shipLength, DOWN) == true)
-				{
-					isInvalidInput = true;
-
-					OutOfBoundsMessage();
-					PrintBoard(waterArray);
-				}
-
-				if (IsUserShipOverlap(waterArray, row - 1, column - 1, shipLength, DOWN) == true)
-				{
-					isInvalidInput = true;
-
-					OverlapMessage();
-					PrintBoard(waterArray);
-				}
-					
-
-				if (isInvalidInput == false)
-				{
-					PlaceUserShip(waterArray, row - 1, column - 1, shipLength, DOWN);
-				}
-
-			break;
-
-			case 'L':
-
-				if (IsOutOfBounds(row - 1, column - 1, shipLength, LEFT) == true)
-				{
-					isInvalidInput = true;
-
-					OutOfBoundsMessage();
-					PrintBoard(waterArray);
-				}
-
-				if (IsUserShipOverlap(waterArray, row - 1, column - 1, shipLength, LEFT) == true)
-				{
-					isInvalidInput = true;
-
-					OverlapMessage();
-					PrintBoard(waterArray);
-
-				}
-
-				if (isInvalidInput == false)
-				{
-					PlaceUserShip(waterArray, row - 1, column - 1, shipLength, LEFT);
-				}
-
-			break;
-
-			case 'R':
-
-				if (IsOutOfBounds(row - 1, column - 1, shipLength, RIGHT) == true)
-				{
-					isInvalidInput = true;
-
-					OutOfBoundsMessage();
-					PrintBoard(waterArray);
-				}
-
-				if (IsUserShipOverlap(waterArray, row - 1, column - 1, shipLength, RIGHT) == true)
-				{
-					isInvalidInput = true;
-
-					OverlapMessage();
-					PrintBoard(waterArray);
-
-				}
-
-				if (isInvalidInput == false)
-				{
-					PlaceUserShip(waterArray, row - 1, column - 1, shipLength, RIGHT);
-				}
-
-			break;
+			PlaceUserShip(waterArray, row, column, shipLength, shipOrientation);
 		}
-	} while (isInvalidInput);
+		
+	} while (isInvalidInput); //If overlap or out-of-array bounds then this function loops until the user enters valid data
+}
+
+
+
+bool IsValidOrientation(char waterArray[][10], int row, int column, string shipOrientation, int shipLength)
+{
+	switch (toupper(shipOrientation[0]))
+	{
+	case 'U':
+
+		if (IsOutOfBounds(row, column, shipLength, UP) == true || IsUserShipOverlap(waterArray, row, column, shipLength, UP) == true)
+		{
+
+			OutOfBoundsMessage();
+			PrintBoard(waterArray);
+
+			return true;
+		}
+
+		return false;
+
+	case 'D':
+
+		if (IsOutOfBounds(row, column, shipLength, DOWN) == true || IsUserShipOverlap(waterArray, row, column, shipLength, DOWN) == true)
+		{
+
+			OutOfBoundsMessage();
+			PrintBoard(waterArray);
+
+			return true;
+		}
+
+		return false;
+
+	case 'L':
+
+		if (IsOutOfBounds(row, column, shipLength, LEFT) == true || IsUserShipOverlap(waterArray, row, column, shipLength, LEFT) == true)
+		{
+
+			OutOfBoundsMessage();
+			PrintBoard(waterArray);
+
+			return true;
+		}
+
+		return false;
+
+	case 'R':
+
+		if (IsOutOfBounds(row, column, shipLength, RIGHT) == true || IsUserShipOverlap(waterArray, row, column, shipLength, RIGHT) == true)
+		{
+
+			OutOfBoundsMessage();
+			PrintBoard(waterArray);
+
+			return true;
+		}
+
+		return false;
+	}
 }
 
 bool IsUserShipOverlap(char array[][10], int row, int column, int shipLength, orientation shipDirection)
@@ -709,13 +685,13 @@ bool IsOutOfBounds(int row, int column, int shipLength, orientation shipDirectio
 	}
 }
 
-void PlaceUserShip(char array[][10], int row, int column, int shipLength, orientation shipDirection)
+void PlaceUserShip(char array[][10], int row, int column, int shipLength, string shipOrientation)
 {
 	int limit;
 
-	switch (shipDirection)
+	switch (toupper(shipOrientation[0]))
 	{
-	case UP:
+	case 'U':
 		limit = row - shipLength;
 
 		for (row; row > limit; --row)
@@ -724,7 +700,7 @@ void PlaceUserShip(char array[][10], int row, int column, int shipLength, orient
 		}
 		break;
 
-	case DOWN:
+	case 'D':
 		limit = row + shipLength;
 
 		for (row; row < limit; row++)
@@ -733,7 +709,7 @@ void PlaceUserShip(char array[][10], int row, int column, int shipLength, orient
 		}
 		break;
 
-	case LEFT:
+	case 'L':
 		limit = column - shipLength;
 
 		for (column; column > limit; --column)
@@ -742,7 +718,7 @@ void PlaceUserShip(char array[][10], int row, int column, int shipLength, orient
 		}
 		break;
 
-	case RIGHT:
+	case 'R':
 		limit = column + shipLength;
 
 		for (column; column < limit; ++column)
