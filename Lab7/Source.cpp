@@ -208,48 +208,67 @@ void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits)
 void Menu(char computerShipGrid[][10], char computerGuessGrid[][10], char userGuessGrid[][10], char userShipGrid[][10], bool& hasSurrendered, int& userHits)
 {
 	int selection;
+	bool isEndOfTurn;
 
 	cout << "Here is your guess grid: \n";
 
 	PrintBoard(userGuessGrid);
 
-	cout << "Enter your selection from the following menu: \n";
+	cout << "\nEnter your selection from the following menu: \n";
 
-	cout << "1 - Fire\n";
-	cout << "2 - View the computer's guess grid\n";
-	cout << "3 - Review your ship grid\n";
-	cout << "4 - Surrender\n";
-	cout << "Enter your choice: ";
-	cin >> selection;
-
-	switch (selection)
+	do
 	{
-	case 1:
-		system("cls");
-		PrintBoard(userGuessGrid);
-		UserTurn(computerShipGrid, userGuessGrid, userHits);
-		break;
+		isEndOfTurn = false;
 
-	case 2:
-		system("cls");
-		cout << "########################################\n";
-		cout << "These are the computer's guesses so far: \n";
-		PrintBoard(computerGuessGrid);
-		cout << "########################################\n\n";
-		break;
+		cout << "1 - Fire\n";
+		cout << "2 - View the computer's guess grid\n";
+		cout << "3 - Review your ship grid\n";
+		cout << "4 - Surrender\n";
+		cout << "Enter your choice: ";
+		cin >> selection;
 
-	case 3:
-		system("cls");
-		cout << "#######################\n";
-		cout << "Here is your ship grid: \n";
-		PrintBoard(userShipGrid);
-		cout << "#######################\n\n";
-		break;
+		switch (selection)
+		{
+		case 1:
+			system("cls");
+			PrintBoard(userGuessGrid);
+			UserTurn(computerShipGrid, userGuessGrid, userHits);
+			isEndOfTurn = true;
+			break;
 
-	case 4:
-		Surrender(hasSurrendered);
-		break;
-	}
+		case 2:
+			system("cls");
+			cout << "########################################\n";
+			cout << "These are the computer's guesses so far: \n";
+			PrintBoard(computerGuessGrid);
+			cout << "########################################\n\n";
+			break;
+
+		case 3:
+			system("cls");
+			cout << "#######################\n";
+			cout << "Here is your ship grid: \n";
+			PrintBoard(userShipGrid);
+			cout << "#######################\n\n";
+			break;
+
+		case 4:
+			Surrender(hasSurrendered);
+			isEndOfTurn = true;
+			break;
+
+		default:
+
+			if (!cin) {
+				cin.clear();
+				cin.ignore(1000, '\n');
+			}
+
+			cout << "\n\nUnknown selection - your input should be an integer from the menu above.\n";
+			cout << "Try again.\n\n";
+		}
+	} while (!isEndOfTurn);
+	
 }
 
 bool NewGameMenu()
