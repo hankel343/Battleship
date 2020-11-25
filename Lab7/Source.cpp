@@ -1,6 +1,6 @@
 #include <iostream>
-#include <stdlib.h>
 #include <time.h>
+#include <Windows.h>
 
 using namespace std;
 
@@ -133,7 +133,7 @@ void ComputerSetUp(char guessGrid[][10], char shipGrid[][10])
 
 void UserSetUp(char guessGrid[][10], char shipGrid[][10])
 {
-
+	
 	//Initialize user's guess grid to water ('~')
 	InitializeDefaultBoard(guessGrid);
 
@@ -160,6 +160,9 @@ void ComputerTurn(char shipGrid[][10], char guessGrid[][10], int& computerHits)
 
 void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits)
 {
+	HANDLE hConsole;
+	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
 	int xcoordinate;
 	int ycoordinate;
 
@@ -187,13 +190,19 @@ void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits)
 		cin >> ycoordinate;
 	}
 
-	if (Fire(shipGrid, guessGrid, xcoordinate, ycoordinate) == true)
-	{
-		cout << "\n\nYou landed a hit!\n";
+	if (Fire(shipGrid, guessGrid, xcoordinate, ycoordinate) == true) {
+		cout << "\n\nYou landed a ";
+		SetConsoleTextAttribute(hConsole, 12); //Sets console color to red
+		cout << "hit!\n";
 		userHits++;
 	}
-	else
-		cout << "\n\nYou missed!\n";
+	else {
+		cout << "\n\nYou";
+		SetConsoleTextAttribute(hConsole, 10); //Sets console color to green
+		cout << " missed!\n";
+	}
+
+	SetConsoleTextAttribute(hConsole, 15); //Sets console text back to white
 }
 
 void Menu(char computerShipGrid[][10], char computerGuessGrid[][10], char userGuessGrid[][10], char userShipGrid[][10], bool& hasSurrendered, int& userHits)
@@ -333,6 +342,11 @@ bool Fire(char shipGrid[][10], char guessGrid[][10], int xcoordinate, int ycoord
 
 void UserShipPlacement(char waterArray[][10])
 {
+	HANDLE hConsole;
+	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	SetConsoleTextAttribute(hConsole, 15);
+
 	cout << "The computer has finished its set-up\n";
 	cout << "You need to do the same with the following board: \n";
 
@@ -426,8 +440,12 @@ void InitializeDefaultBoard(char emptyArray[][10])
 
 void PrintBoard(char array[][10])
 {
+	HANDLE hConsole;
+	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
 	for (int i = 1; i < 11; ++i)
 	{
+		SetConsoleTextAttribute(hConsole, 15);
 		//This if-else statement prints the x-axis scale
 		if (i == 1) {
 			cout << "   " << i << " ";
@@ -448,20 +466,37 @@ void PrintBoard(char array[][10])
 		//This if-else block prints the y-axis scale
 		if (i < 9)
 		{
+			SetConsoleTextAttribute(hConsole, 15);
 			cout << i + 1 << "  ";
 		}
-		else
+		else {
+			SetConsoleTextAttribute(hConsole, 15);
 			cout << i + 1 << " ";
+		}
+			
 		
 		for (int j = 0; j < 10; ++j)
 		{
 
-			cout << array[i][j] << ' ';
+			if (array[i][j] == '~') {
+				SetConsoleTextAttribute(hConsole, 9); //Set console color to blue (9 = blue) if array cell contains a '~'
+				cout << array[i][j] << ' ';
+			}
+			else if (array[i][j] == '#' || array[i][j] == 'H') { //Set console color to red (12 = red) if array cell contains a '#' or 'H'
+				SetConsoleTextAttribute(hConsole, 12);
+				cout << array[i][j] << ' ';
+			}
+			else if (array[i][j] == 'M') { //Set console color to green (10 = green) if the array cell contains an 'M'
+				SetConsoleTextAttribute(hConsole, 10);
+				cout << array[i][j] << ' ';
+			}
+			
 
 			if (j == 9)
 				cout << endl;
 		}
 	}
+	SetConsoleTextAttribute(hConsole, 15);
 }
 
 void GenerateComputerGrid(char waterArray[][10])
