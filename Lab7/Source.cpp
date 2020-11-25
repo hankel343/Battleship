@@ -12,11 +12,17 @@ void ComputerSetUp(char guessGrid[][10], char shipGrid[][10]);
 
 void UserSetUp(char guessGrid[][10], char shipGrid[][10]);
 
-void Instructions();
-
 void ComputerTurn(char shipGrid[][10], char guessGrid[][10], int& computerHits);
 
 void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits);
+
+void CheckWinConditions(char shipGrid[][10], int computerHits, int userHits, bool hasSurrendered, bool& isEndOfGame, int& numOfLosses, int& numOfWins);
+
+void Menu(char computerShipGrid[][10], char computerGuessGrid[][10], char userGuessGrid[][10], char userShipGrid[][10], bool& hasSurrendered, int& userHits);
+
+bool NewGameMenu();
+
+void Surrender(bool& hasSurrendered);
 
 bool Fire(char shipGrid[][10], char computerGuessGrid[][10], int xcoordinate, int ycoordinate);
 
@@ -52,6 +58,8 @@ void OverlapMessage();
 
 void UpdatedBoardMessage();
 
+void PrintScoreBoard(int numOfGames, int numOfLosses, int numOfWins);
+
 int main()
 {
 	srand(unsigned int(time(NULL)));
@@ -62,20 +70,25 @@ int main()
 	char userGuessGrid[10][10];
 	char userShipGrid[10][10];
 
+	//Boolean data types for loop control in main()
 	bool isNewGame;
 	bool isEndOfGame;
+	bool hasSurrendered;
+	
+	//Track game progress.
 	int numOfGames = 1;
-
-	int userHits = 0;
-	int computerHits = 0;
+	int numOfWins = 0;
+	int numOfLosses = 0;
+	int userHits;
+	int computerHits;
 	do
 	{
-		if (numOfGames == 1)
-		{
-			//Instructions();
-		}
+		system("cls");
 
-		isNewGame = false;
+		//Tracks how many hits have been made (17 in total for each gameboard)
+		computerHits = 0;
+		userHits = 0;
+
 		//Initializes and populates computer's board
 		ComputerSetUp(computerGuessGrid, computerShipGrid);
 
@@ -83,22 +96,24 @@ int main()
 		UserSetUp(userGuessGrid, userShipGrid);
 
 		isEndOfGame = false;
+		hasSurrendered = false;
 
 		do
 		{
+
 			ComputerTurn(userShipGrid, computerGuessGrid, computerHits);
 
-			UserTurn(computerShipGrid, userGuessGrid, userHits);
+			Menu(computerShipGrid, computerGuessGrid, userGuessGrid, userShipGrid, hasSurrendered, userHits);
 
-			if (computerHits == 17 || userHits == 17)
-			{
-				isEndOfGame = true;
-			}
-
+			CheckWinConditions(computerShipGrid, computerHits, userHits, hasSurrendered, isEndOfGame, numOfLosses, numOfWins);
 
 		} while (!isEndOfGame);
-	} while (isNewGame);
-	
+
+	} while (NewGameMenu());
+
+	PrintScoreBoard(numOfGames, numOfLosses, numOfWins);
+
+	cout << "\n\nGoodbye...\n";
 
 	return 0;
 }
@@ -129,34 +144,24 @@ void UserSetUp(char guessGrid[][10], char shipGrid[][10])
 	UserShipPlacement(shipGrid);
 }
 
-void Instructions()
-{
-
-}
-
 void ComputerTurn(char shipGrid[][10], char guessGrid[][10], int& computerHits)
 {
-	int ranXCoordinate = rand() % 10;
-	int ranYCoordinate = rand() % 10;
+	//Ran num range must be 1 - 10 because the Fire() function subtracts one for user input.
+	//In other words 1 is subtracted because these values are passed for array processing where valid array indexes are 1 - 9.
+	int ranXCoordinate = rand() % 10 + 1;
+	int ranYCoordinate = rand() % 10 + 1;
 
-	if (Fire(shipGrid, guessGrid, ranXCoordinate, ranYCoordinate) == true)
+	if (Fire(shipGrid, guessGrid, ranXCoordinate, ranYCoordinate) == true) //If there is a '#' at the random coordinates that computer has generated.
 	{
 		cout << "\nThe computer landed a hit!\n\n";
 		computerHits++;
 	}
-
-	cout << "This is the computer's guess grid: \n";
-	PrintBoard(guessGrid);
 }
 
 void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits)
 {
 	int xcoordinate;
 	int ycoordinate;
-
-	cout << "\n\nThis is your guess grid: \n";
-
-	PrintBoard(guessGrid);
 
 	cout << "\n\nEnter the x-coordinate you want to fire on: ";
 	cin >> xcoordinate;
@@ -191,6 +196,127 @@ void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits)
 		cout << "\n\nYou missed!\n";
 }
 
+void Menu(char computerShipGrid[][10], char computerGuessGrid[][10], char userGuessGrid[][10], char userShipGrid[][10], bool& hasSurrendered, int& userHits)
+{
+	int selection;
+
+	cout << "Here is your guess grid: \n";
+
+	PrintBoard(userGuessGrid);
+
+	cout << "Enter your selection from the following menu: \n";
+
+	cout << "1 - Fire\n";
+	cout << "2 - View the computer's guess grid\n";
+	cout << "3 - Review your ship grid\n";
+	cout << "4 - Surrender\n";
+	cout << "Enter your choice: ";
+	cin >> selection;
+
+	switch (selection)
+	{
+	case 1:
+		system("cls");
+		PrintBoard(userGuessGrid);
+		UserTurn(computerShipGrid, userGuessGrid, userHits);
+		break;
+
+	case 2:
+		system("cls");
+		cout << "########################################\n";
+		cout << "These are the computer's guesses so far: \n";
+		PrintBoard(computerGuessGrid);
+		cout << "########################################\n\n";
+		break;
+
+	case 3:
+		system("cls");
+		cout << "#######################\n";
+		cout << "Here is your ship grid: \n";
+		PrintBoard(userShipGrid);
+		cout << "#######################\n\n";
+		break;
+
+	case 4:
+		Surrender(hasSurrendered);
+		break;
+	}
+}
+
+bool NewGameMenu()
+{
+	char input;
+
+	cout << "\n\nWould you like to start a new game?\n";
+	cout << "Y/N: ";
+	cin >> input;
+
+	while (!cin || (toupper(input) != 'N' && toupper(input) != 'Y'))
+	{
+		cout << "\n*******************************************";
+		cout << "\n\nYour input should either be a 'Y' or an 'N'\a\n";
+		cout << "*******************************************\n";
+		cout << "Try again: ";
+		cin >> input;
+	}
+
+	//If user enters an N game loop will be exited.
+	if (input == 'N')
+		return false;
+	else
+		return true;
+}
+
+void PrintScoreBoard(int numOfGames, int numOfLosses, int numOfWins)
+{
+	system("cls");
+	cout << "Here are your final stats for the program duration: \n";
+	cout << "Total games: " << numOfGames << endl;
+	cout << "Number of wins: " << numOfWins << endl;
+	cout << "Number of losses: " << numOfLosses << endl;
+}
+
+void Surrender(bool& hasSurrendered)
+{
+	char input;
+
+	cout << "\n\nAre you sure you want to surrender?\n";
+	cout << "Y/N: ";
+	cin >> input;
+
+	if (toupper(input) == 'Y')
+		hasSurrendered = true;
+
+}
+
+void CheckWinConditions(char shipGrid[][10], int computerHits, int userHits, bool hasSurrendered, bool& isEndOfGame, int& numOfLosses, int &numOfWins)
+{
+	if (computerHits == 17 || hasSurrendered == true) {
+
+		isEndOfGame = true;
+
+		system("cls");
+
+		cout << "\n\nYou lose!\n";
+		cout << "Here is the computer's ship board: \n";
+		numOfLosses++;
+
+		PrintBoard(shipGrid);
+	}
+	else if (userHits == 17) {
+
+		isEndOfGame = true;
+
+		system("cls");
+
+		cout << "\n\nYou win!\n";
+		cout << "Here is the computer's ship board: \n";
+		numOfWins++;
+
+		PrintBoard(shipGrid);
+	}
+}
+
 bool Fire(char shipGrid[][10], char guessGrid[][10], int xcoordinate, int ycoordinate)
 {
 	if (shipGrid[ycoordinate - 1][xcoordinate - 1] == '#')
@@ -207,10 +333,7 @@ bool Fire(char shipGrid[][10], char guessGrid[][10], int xcoordinate, int ycoord
 
 void UserShipPlacement(char waterArray[][10])
 {
-	
-	
-
-	cout << "The computer has arranged its ships on the grid.\n";
+	cout << "The computer has finished its set-up\n";
 	cout << "You need to do the same with the following board: \n";
 
 	PrintBoard(waterArray);
@@ -228,6 +351,8 @@ void UserShipPlacement(char waterArray[][10])
 
 			ValidateUserInput(waterArray, shipLength);
 
+			system("cls");
+
 			UpdatedBoardMessage();
 			PrintBoard(waterArray);
 			break;
@@ -238,6 +363,8 @@ void UserShipPlacement(char waterArray[][10])
 			cout << "\n\nPlace your submarine (3 places)";
 
 			ValidateUserInput(waterArray, shipLength);
+
+			system("cls");
 
 			UpdatedBoardMessage();
 			PrintBoard(waterArray);
@@ -250,6 +377,8 @@ void UserShipPlacement(char waterArray[][10])
 
 			ValidateUserInput(waterArray, shipLength);
 
+			system("cls");
+
 			UpdatedBoardMessage();
 			PrintBoard(waterArray);
 			break;
@@ -260,6 +389,8 @@ void UserShipPlacement(char waterArray[][10])
 			cout << "\n\nPlace your battleship (4 places)";
 
 			ValidateUserInput(waterArray, shipLength);
+
+			system("cls");
 
 			UpdatedBoardMessage();
 			PrintBoard(waterArray);
@@ -272,8 +403,8 @@ void UserShipPlacement(char waterArray[][10])
 
 			ValidateUserInput(waterArray, shipLength);
 
-			UpdatedBoardMessage();
-			PrintBoard(waterArray);
+			system("cls");
+
 			break;
 		}
 	}
@@ -541,8 +672,6 @@ void ValidateUserInput(char waterArray[][10], int& shipLength)
 		
 	} while (isInvalidInput); //If overlap or out-of-array bounds then this function loops until the user enters valid data
 }
-
-
 
 bool IsValidOrientation(char waterArray[][10], int row, int column, string shipOrientation, int shipLength)
 {
