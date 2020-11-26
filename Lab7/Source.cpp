@@ -1,54 +1,74 @@
 #include <iostream>
 #include <time.h>
 #include <Windows.h>
+#include <iomanip>
 
 using namespace std;
 
+typedef char gameboard[10][10];
+
+class player {
+
+	float cumulativeHits = 0;
+	float cumulativeMisses = 0;
+
+public:
+	gameboard guessArray;
+	gameboard shipArray;
+ 
+	void SetNumOfHits(int hits) {cumulativeHits += hits;}
+	void SetNumOfMisses(int misses) {cumulativeMisses += misses;}
+	float GetHits() {return cumulativeHits;}
+	float GetMisses() {return cumulativeMisses;}
+	float PrintAccuracy() {return cumulativeHits / (cumulativeHits + cumulativeMisses);}
+
+} user, computer;
+
 enum orientation {UP, DOWN, LEFT, RIGHT};
 
-enum shiptype { DESTROYER, SUBMARINE, CRUSIER, BATTLESHIP, CARRIER };
+enum shiptype {DESTROYER, SUBMARINE, CRUSIER, BATTLESHIP, CARRIER};
 
-void ComputerSetUp(char guessGrid[][10], char shipGrid[][10]);
+void ComputerSetUp();
 
-void UserSetUp(char guessGrid[][10], char shipGrid[][10]);
+void UserSetUp();
 
-void ComputerTurn(char shipGrid[][10], char guessGrid[][10], int& computerHits);
+void ComputerTurn(int& computerHits, int& computerMisses);
 
-void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits);
+void UserTurn(int& userHits, int& userMisses);
 
-void CheckWinConditions(char shipGrid[][10], int computerHits, int userHits, bool hasSurrendered, bool& isEndOfGame, int& numOfLosses, int& numOfWins);
+void CheckWinConditions(int computerHits, int computerMisses, int userHits, int userMisses, bool hasSurrendered, bool& isEndOfGame, int& numOfLosses, int& numOfWins);
 
-void Menu(char computerShipGrid[][10], char computerGuessGrid[][10], char userGuessGrid[][10], char userShipGrid[][10], bool& hasSurrendered, int& userHits);
+void Menu(bool& hasSurrendered, int& userHits, int& userMisses);
 
 bool NewGameMenu();
 
 void Surrender(bool& hasSurrendered);
 
-bool Fire(char shipGrid[][10], char computerGuessGrid[][10], int xcoordinate, int ycoordinate);
+bool Fire(char shipGrid[][10], char guessGrid[][10], int xcoordinate, int ycoordinate);
 
-void GenerateComputerGrid(char waterArray[][10]);
+void GenerateComputerGrid();
 
 void InitializeDefaultBoard(char emptyArray[][10]);
 
-void UserShipPlacement(char waterArray[][10]);
+void UserShipPlacement();
 
-void ValidateUserInput(char waterArray[][10], int& shipLength);
+void ValidateUserInput(int& shipLength);
 
-bool IsValidOrientation(char waterArray[][10], int row, int column, string shipOrientation, int shipLength);
+bool IsValidOrientation(int row, int column, string shipOrientation, int shipLength);
 
 void PrintBoard(char array[][10]);
 
-void AddShipVertical(char array[][10], int shipLength);
+void AddShipVertical(int shipLength);
 
-void AddShipHorizontal(char array[][10], int shipLength);
+void AddShipHorizontal(int shipLength);
 
-bool IsComputerShipOverlap(char array[][10], int ranRowsorColumns, int shipLength, orientation shipDirection);
+bool IsComputerShipOverlap(int ranRowsorColumns, int shipLength, orientation shipDirection);
 
-bool IsUserShipOverlap(char array[][10], int row, int column, int shipLength, orientation shipDirection);
+bool IsUserShipOverlap(int row, int column, int shipLength, orientation shipDirection);
 
 bool IsOutOfBounds(int row, int column, int shipLength, orientation shipDirection);
 
-void PlaceUserShip(char array[][10], int row, int column, int shipLength, string shipOrientation);
+void PlaceUserShip(int row, int column, int shipLength, string shipOrientation);
 
 void OutOfBoundsMessage();
 
@@ -64,12 +84,6 @@ int main()
 {
 	srand(unsigned int(time(NULL)));
 
-	char computerGuessGrid[10][10];
-	char computerShipGrid[10][10];
-
-	char userGuessGrid[10][10];
-	char userShipGrid[10][10];
-
 	//Boolean data types for loop control in main()
 	bool isNewGame;
 	bool isEndOfGame;
@@ -80,32 +94,35 @@ int main()
 	int numOfWins = 0;
 	int numOfLosses = 0;
 	int userHits;
+	int userMisses;
 	int computerHits;
+	int computerMisses;
 	do
 	{
 		system("cls");
 
 		//Tracks how many hits have been made (17 in total for each gameboard)
 		computerHits = 0;
+		computerMisses = 0;
 		userHits = 0;
+		userMisses = 0;
 
 		//Initializes and populates computer's board
-		ComputerSetUp(computerGuessGrid, computerShipGrid);
+		ComputerSetUp();
 
 		//Initializes and allows user to place their ships
-		UserSetUp(userGuessGrid, userShipGrid);
+		UserSetUp();
 
 		isEndOfGame = false;
 		hasSurrendered = false;
 
 		do
 		{
+			ComputerTurn(computerHits, computerMisses);
 
-			ComputerTurn(userShipGrid, computerGuessGrid, computerHits);
+			Menu(hasSurrendered, userHits, userMisses);
 
-			Menu(computerShipGrid, computerGuessGrid, userGuessGrid, userShipGrid, hasSurrendered, userHits);
-
-			CheckWinConditions(computerShipGrid, computerHits, userHits, hasSurrendered, isEndOfGame, numOfLosses, numOfWins);
+			CheckWinConditions(computerHits, computerMisses, userHits, userMisses, hasSurrendered, isEndOfGame, numOfLosses, numOfWins);
 
 		} while (!isEndOfGame);
 
@@ -118,47 +135,52 @@ int main()
 	return 0;
 }
 
-void ComputerSetUp(char guessGrid[][10], char shipGrid[][10])
+void ComputerSetUp()
 {
 
 	//Sets empty 10 x 10 array to water ('~') for computer guess grid
-	InitializeDefaultBoard(guessGrid);
+	InitializeDefaultBoard(computer.guessArray);
 
 	//Sets empty 10 x 10 array to water ('~')
-	InitializeDefaultBoard(shipGrid);
+	InitializeDefaultBoard(computer.shipArray);
 
 	//Randomly select 5 places on the water grid to place a ship
-	GenerateComputerGrid(shipGrid);
+	GenerateComputerGrid();
 }
 
-void UserSetUp(char guessGrid[][10], char shipGrid[][10])
+void UserSetUp()
 {
 	
 	//Initialize user's guess grid to water ('~')
-	InitializeDefaultBoard(guessGrid);
+	InitializeDefaultBoard(user.guessArray);
 
 	//Initialize user's ship grid to water ('~')
-	InitializeDefaultBoard(shipGrid);
+	InitializeDefaultBoard(user.shipArray);
 
 	//Allows user to place ships and validates ship positions at the same time
-	UserShipPlacement(shipGrid);
+	UserShipPlacement();
 }
 
-void ComputerTurn(char shipGrid[][10], char guessGrid[][10], int& computerHits)
+void ComputerTurn(int& computerHits, int& computerMisses)
 {
 	//Ran num range must be 1 - 10 because the Fire() function subtracts one for user input.
 	//In other words 1 is subtracted because these values are passed for array processing where valid array indexes are 1 - 9.
 	int ranXCoordinate = rand() % 10 + 1;
 	int ranYCoordinate = rand() % 10 + 1;
 
-	if (Fire(shipGrid, guessGrid, ranXCoordinate, ranYCoordinate) == true) //If there is a '#' at the random coordinates that computer has generated.
+	if (Fire(user.shipArray, computer.guessArray, ranXCoordinate, ranYCoordinate) == true) //If there is a '#' at the random coordinates that computer has generated.
 	{
 		cout << "\nThe computer landed a hit!\n\n";
 		computerHits++;
 	}
+	else {
+		cout << "\nThe computer missed!\n";
+		computerMisses++;
+	}
+		
 }
 
-void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits)
+void UserTurn(int& userHits, int& userMisses)
 {
 	HANDLE hConsole;
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -190,7 +212,7 @@ void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits)
 		cin >> ycoordinate;
 	}
 
-	if (Fire(shipGrid, guessGrid, xcoordinate, ycoordinate) == true) {
+	if (Fire(computer.shipArray, user.guessArray, xcoordinate, ycoordinate) == true) {
 		cout << "\n\nYou landed a ";
 		SetConsoleTextAttribute(hConsole, 12); //Sets console color to red
 		cout << "hit!\n";
@@ -200,19 +222,20 @@ void UserTurn(char shipGrid[][10], char guessGrid[][10], int& userHits)
 		cout << "\n\nYou";
 		SetConsoleTextAttribute(hConsole, 10); //Sets console color to green
 		cout << " missed!\n";
+		userMisses++;
 	}
 
 	SetConsoleTextAttribute(hConsole, 15); //Sets console text back to white
 }
 
-void Menu(char computerShipGrid[][10], char computerGuessGrid[][10], char userGuessGrid[][10], char userShipGrid[][10], bool& hasSurrendered, int& userHits)
+void Menu(bool& hasSurrendered, int& userHits, int& userMisses)
 {
 	int selection;
 	bool isEndOfTurn;
 
 	cout << "Here is your guess grid: \n";
 
-	PrintBoard(userGuessGrid);
+	PrintBoard(user.guessArray);
 
 	cout << "\nEnter your selection from the following menu: \n";
 
@@ -231,8 +254,8 @@ void Menu(char computerShipGrid[][10], char computerGuessGrid[][10], char userGu
 		{
 		case 1:
 			system("cls");
-			PrintBoard(userGuessGrid);
-			UserTurn(computerShipGrid, userGuessGrid, userHits);
+			PrintBoard(user.guessArray);
+			UserTurn(userHits, userMisses);
 			isEndOfTurn = true;
 			break;
 
@@ -240,7 +263,7 @@ void Menu(char computerShipGrid[][10], char computerGuessGrid[][10], char userGu
 			system("cls");
 			cout << "########################################\n";
 			cout << "These are the computer's guesses so far: \n";
-			PrintBoard(computerGuessGrid);
+			PrintBoard(computer.guessArray);
 			cout << "########################################\n\n";
 			break;
 
@@ -248,7 +271,7 @@ void Menu(char computerShipGrid[][10], char computerGuessGrid[][10], char userGu
 			system("cls");
 			cout << "#######################\n";
 			cout << "Here is your ship grid: \n";
-			PrintBoard(userShipGrid);
+			PrintBoard(user.shipArray);
 			cout << "#######################\n\n";
 			break;
 
@@ -302,6 +325,16 @@ void PrintScoreBoard(int numOfGames, int numOfLosses, int numOfWins)
 	cout << "Total games: " << numOfGames << endl;
 	cout << "Number of wins: " << numOfWins << endl;
 	cout << "Number of losses: " << numOfLosses << endl;
+	cout << "\n*********************************\n";
+	cout << "\nComputer stats: \n";
+	cout << "Cumulative number of hits: " << computer.GetHits() << endl;
+	cout << "Cumulative number of misses: " << computer.GetMisses() << endl;
+	cout << setprecision(2) << "Accuracy: " << computer.PrintAccuracy() << '%' << endl;
+	cout << "\n*********************************\n";
+	cout << "\nUser stats: \n";
+	cout << "Cumulative number of hits: " << user.GetHits() << endl;
+	cout << "Cumulative number of misses: " << user.GetMisses() << endl;
+	cout << setprecision(2) << "Accuracy: " << user.PrintAccuracy() << '%' << endl;
 }
 
 void Surrender(bool& hasSurrendered)
@@ -317,7 +350,7 @@ void Surrender(bool& hasSurrendered)
 
 }
 
-void CheckWinConditions(char shipGrid[][10], int computerHits, int userHits, bool hasSurrendered, bool& isEndOfGame, int& numOfLosses, int &numOfWins)
+void CheckWinConditions(int computerHits, int computerMisses, int userHits, int userMisses, bool hasSurrendered, bool& isEndOfGame, int& numOfLosses, int &numOfWins)
 {
 	if (computerHits == 17 || hasSurrendered == true) {
 
@@ -329,7 +362,13 @@ void CheckWinConditions(char shipGrid[][10], int computerHits, int userHits, boo
 		cout << "Here is the computer's ship board: \n";
 		numOfLosses++;
 
-		PrintBoard(shipGrid);
+		//Update values in player objects
+		computer.SetNumOfHits(computerHits);
+		computer.SetNumOfMisses(computerMisses);
+		user.SetNumOfHits(userHits);
+		user.SetNumOfMisses(userMisses);
+
+		PrintBoard(computer.shipArray);
 	}
 	else if (userHits == 17) {
 
@@ -341,10 +380,18 @@ void CheckWinConditions(char shipGrid[][10], int computerHits, int userHits, boo
 		cout << "Here is the computer's ship board: \n";
 		numOfWins++;
 
-		PrintBoard(shipGrid);
+		//Update values in player objects
+		computer.SetNumOfHits(computerHits);
+		computer.SetNumOfMisses(computerMisses);
+		user.SetNumOfHits(userHits);
+		user.SetNumOfMisses(userMisses);
+
+
+		PrintBoard(computer.shipArray);
 	}
 }
 
+//shipGrid[][10] and guessGrid[][10] are parameters here because both the player and computer share this function
 bool Fire(char shipGrid[][10], char guessGrid[][10], int xcoordinate, int ycoordinate)
 {
 	if (shipGrid[ycoordinate - 1][xcoordinate - 1] == '#')
@@ -359,7 +406,7 @@ bool Fire(char shipGrid[][10], char guessGrid[][10], int xcoordinate, int ycoord
 	}
 }
 
-void UserShipPlacement(char waterArray[][10])
+void UserShipPlacement()
 {
 	HANDLE hConsole;
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -369,7 +416,7 @@ void UserShipPlacement(char waterArray[][10])
 	cout << "The computer has finished its set-up\n";
 	cout << "You need to do the same with the following board: \n";
 
-	PrintBoard(waterArray);
+	PrintBoard(user.shipArray);
 
 
 	int shipLength;
@@ -382,12 +429,12 @@ void UserShipPlacement(char waterArray[][10])
 
 			cout << "\n\nPlace your destroyer (2 places)";
 
-			ValidateUserInput(waterArray, shipLength);
+			ValidateUserInput(shipLength);
 
 			system("cls");
 
 			UpdatedBoardMessage();
-			PrintBoard(waterArray);
+			PrintBoard(user.shipArray);
 			break;
 
 		case SUBMARINE:
@@ -395,12 +442,12 @@ void UserShipPlacement(char waterArray[][10])
 
 			cout << "\n\nPlace your submarine (3 places)";
 
-			ValidateUserInput(waterArray, shipLength);
+			ValidateUserInput(shipLength);
 
 			system("cls");
 
 			UpdatedBoardMessage();
-			PrintBoard(waterArray);
+			PrintBoard(user.shipArray);
 			break;
 
 		case CRUSIER:
@@ -408,12 +455,12 @@ void UserShipPlacement(char waterArray[][10])
 
 			cout << "\n\nPlace your crusier (3 places)";
 
-			ValidateUserInput(waterArray, shipLength);
+			ValidateUserInput(shipLength);
 
 			system("cls");
 
 			UpdatedBoardMessage();
-			PrintBoard(waterArray);
+			PrintBoard(user.shipArray);
 			break;
 
 		case BATTLESHIP:
@@ -421,12 +468,12 @@ void UserShipPlacement(char waterArray[][10])
 
 			cout << "\n\nPlace your battleship (4 places)";
 
-			ValidateUserInput(waterArray, shipLength);
+			ValidateUserInput(shipLength);
 
 			system("cls");
 
 			UpdatedBoardMessage();
-			PrintBoard(waterArray);
+			PrintBoard(user.shipArray);
 			break;
 
 		case CARRIER:
@@ -434,7 +481,7 @@ void UserShipPlacement(char waterArray[][10])
 
 			cout << "\n\nPlace your carrier (5 places)";
 
-			ValidateUserInput(waterArray, shipLength);
+			ValidateUserInput(shipLength);
 
 			system("cls");
 
@@ -445,6 +492,7 @@ void UserShipPlacement(char waterArray[][10])
 
 }
 
+//Array must be a parameter of this function because it is shared by both the user and the computer's gameboards
 void InitializeDefaultBoard(char emptyArray[][10])
 {
 	//Initializes to water '~'
@@ -457,6 +505,7 @@ void InitializeDefaultBoard(char emptyArray[][10])
 	}
 }
 
+//Array must be a parameter because both the user's and computer's board share this function
 void PrintBoard(char array[][10])
 {
 	HANDLE hConsole;
@@ -518,7 +567,7 @@ void PrintBoard(char array[][10])
 	SetConsoleTextAttribute(hConsole, 15);
 }
 
-void GenerateComputerGrid(char waterArray[][10])
+void GenerateComputerGrid()
 {
 	//Generate the five ship types at with random orientations
 	for (shiptype ship = DESTROYER; ship <= CARRIER; ship = shiptype(ship + 1))
@@ -534,10 +583,10 @@ void GenerateComputerGrid(char waterArray[][10])
 			shipLength = 2;
 
 			if (ranShipOrientation == 1) {
-				AddShipVertical(waterArray, shipLength);
+				AddShipVertical(shipLength);
 			}
 			else
-				AddShipHorizontal(waterArray, shipLength);
+				AddShipHorizontal(shipLength);
 			break;
 
 		case SUBMARINE:
@@ -545,10 +594,10 @@ void GenerateComputerGrid(char waterArray[][10])
 			shipLength = 3;
 
 			if (ranShipOrientation == 1) {
-				AddShipVertical(waterArray, shipLength);
+				AddShipVertical(shipLength);
 			}
 			else
-				AddShipHorizontal(waterArray, shipLength);
+				AddShipHorizontal(shipLength);
 			break;
 
 		case CRUSIER:
@@ -556,10 +605,10 @@ void GenerateComputerGrid(char waterArray[][10])
 			shipLength = 3;
 
 			if (ranShipOrientation == 1) {
-				AddShipVertical(waterArray, shipLength);
+				AddShipVertical(shipLength);
 			}
 			else
-				AddShipHorizontal(waterArray, shipLength);
+				AddShipHorizontal(shipLength);
 			break;
 
 		case BATTLESHIP:
@@ -567,10 +616,10 @@ void GenerateComputerGrid(char waterArray[][10])
 			shipLength = 4;
 
 			if (ranShipOrientation == 1) {
-				AddShipVertical(waterArray, shipLength);
+				AddShipVertical(shipLength);
 			}
 			else
-				AddShipHorizontal(waterArray, shipLength);
+				AddShipHorizontal(shipLength);
 			break;
 
 		case CARRIER:
@@ -578,10 +627,10 @@ void GenerateComputerGrid(char waterArray[][10])
 			shipLength = 5;
 
 			if (ranShipOrientation == 1) {
-				AddShipVertical(waterArray, shipLength);
+				AddShipVertical(shipLength);
 			}
 			else
-				AddShipHorizontal(waterArray, shipLength);
+				AddShipHorizontal(shipLength);
 			break;
 		}
 	}
@@ -589,7 +638,7 @@ void GenerateComputerGrid(char waterArray[][10])
 
 }
 
-void AddShipVertical(char array[][10], int shipLength)
+void AddShipVertical(int shipLength)
 {
 	bool repeatLoop;
 	do
@@ -597,20 +646,20 @@ void AddShipVertical(char array[][10], int shipLength)
 		//Generate a random column index
 		int ranColumn = rand() % 10;
 
-		repeatLoop = IsComputerShipOverlap(array, ranColumn, shipLength, UP);
+		repeatLoop = IsComputerShipOverlap(ranColumn, shipLength, UP);
 
 		if (repeatLoop == false) //If no ship is found in the validation read
 		{
 			for (shipLength; shipLength > 0; --shipLength)
 			{
-				array[shipLength][ranColumn] = '#';
+				computer.shipArray[shipLength][ranColumn] = '#';
 			}
 		}
 
 	} while (repeatLoop);
 }
 
-void AddShipHorizontal(char array[][10], int shipLength)
+void AddShipHorizontal(int shipLength)
 {
 	bool repeatLoop;
 	do
@@ -618,21 +667,21 @@ void AddShipHorizontal(char array[][10], int shipLength)
 		//Generate a random row index
 		int ranRow = rand() % 10;
 
-		repeatLoop = IsComputerShipOverlap(array, ranRow, shipLength, LEFT);
+		repeatLoop = IsComputerShipOverlap(ranRow, shipLength, LEFT);
 
 		if (repeatLoop == false)
 		{
 			//creates ship horizontally
 			for (shipLength; shipLength > 0; --shipLength)
 			{
-				array[ranRow][shipLength] = '#';
+				computer.shipArray[ranRow][shipLength] = '#';
 			}
 		}
 	} while (repeatLoop);
 
 }
 
-bool IsComputerShipOverlap(char array[][10], int ranRowsorColumns, int shipLength, orientation shipDirection)
+bool IsComputerShipOverlap(int ranRowsorColumns, int shipLength, orientation shipDirection)
 {
 	if (shipDirection == UP) //Verifying if a column for a ship
 	{
@@ -640,7 +689,7 @@ bool IsComputerShipOverlap(char array[][10], int ranRowsorColumns, int shipLengt
 		for (shipLength; shipLength > 0; --shipLength)
 		{
 			//Creates a ship vertically 
-			if (array[shipLength][ranRowsorColumns] == '#')
+			if (computer.shipArray[shipLength][ranRowsorColumns] == '#')
 			{
 				return true;
 			}
@@ -652,7 +701,7 @@ bool IsComputerShipOverlap(char array[][10], int ranRowsorColumns, int shipLengt
 	{
 		for (shipLength; shipLength > 0; --shipLength)
 		{
-			if (array[ranRowsorColumns][shipLength] == '#')
+			if (computer.shipArray[ranRowsorColumns][shipLength] == '#')
 			{
 				return true;
 			}
@@ -662,7 +711,7 @@ bool IsComputerShipOverlap(char array[][10], int ranRowsorColumns, int shipLengt
 	}
 }
 
-void ValidateUserInput(char waterArray[][10], int& shipLength)
+void ValidateUserInput(int& shipLength)
 {
 	//This bool is a loop control that is set to true if the user has overlapping ships or out-of-bounds ships
 	bool isInvalidInput;
@@ -716,28 +765,28 @@ void ValidateUserInput(char waterArray[][10], int& shipLength)
 		column--;
 
 		//Checks for out of array bounds or ship overlap
-		isInvalidInput = IsValidOrientation(waterArray, row, column, shipOrientation, shipLength);
+		isInvalidInput = IsValidOrientation(row, column, shipOrientation, shipLength);
 
 		if (isInvalidInput == false)
 		{
 
-			PlaceUserShip(waterArray, row, column, shipLength, shipOrientation);
+			PlaceUserShip(row, column, shipLength, shipOrientation);
 		}
 		
 	} while (isInvalidInput); //If overlap or out-of-array bounds then this function loops until the user enters valid data
 }
 
-bool IsValidOrientation(char waterArray[][10], int row, int column, string shipOrientation, int shipLength)
+bool IsValidOrientation(int row, int column, string shipOrientation, int shipLength)
 {
 	switch (toupper(shipOrientation[0]))
 	{
 	case 'U':
 
-		if (IsOutOfBounds(row, column, shipLength, UP) == true || IsUserShipOverlap(waterArray, row, column, shipLength, UP) == true)
+		if (IsOutOfBounds(row, column, shipLength, UP) == true || IsUserShipOverlap(row, column, shipLength, UP) == true)
 		{
 
 			OutOfBoundsMessage();
-			PrintBoard(waterArray);
+			PrintBoard(user.shipArray);
 
 			return true;
 		}
@@ -746,11 +795,11 @@ bool IsValidOrientation(char waterArray[][10], int row, int column, string shipO
 
 	case 'D':
 
-		if (IsOutOfBounds(row, column, shipLength, DOWN) == true || IsUserShipOverlap(waterArray, row, column, shipLength, DOWN) == true)
+		if (IsOutOfBounds(row, column, shipLength, DOWN) == true || IsUserShipOverlap(row, column, shipLength, DOWN) == true)
 		{
 
 			OutOfBoundsMessage();
-			PrintBoard(waterArray);
+			PrintBoard(user.shipArray);
 
 			return true;
 		}
@@ -759,11 +808,11 @@ bool IsValidOrientation(char waterArray[][10], int row, int column, string shipO
 
 	case 'L':
 
-		if (IsOutOfBounds(row, column, shipLength, LEFT) == true || IsUserShipOverlap(waterArray, row, column, shipLength, LEFT) == true)
+		if (IsOutOfBounds(row, column, shipLength, LEFT) == true || IsUserShipOverlap(row, column, shipLength, LEFT) == true)
 		{
 
 			OutOfBoundsMessage();
-			PrintBoard(waterArray);
+			PrintBoard(user.shipArray);
 
 			return true;
 		}
@@ -772,11 +821,11 @@ bool IsValidOrientation(char waterArray[][10], int row, int column, string shipO
 
 	case 'R':
 
-		if (IsOutOfBounds(row, column, shipLength, RIGHT) == true || IsUserShipOverlap(waterArray, row, column, shipLength, RIGHT) == true)
+		if (IsOutOfBounds(row, column, shipLength, RIGHT) == true || IsUserShipOverlap(row, column, shipLength, RIGHT) == true)
 		{
 
 			OutOfBoundsMessage();
-			PrintBoard(waterArray);
+			PrintBoard(user.shipArray);
 
 			return true;
 		}
@@ -785,7 +834,7 @@ bool IsValidOrientation(char waterArray[][10], int row, int column, string shipO
 	}
 }
 
-bool IsUserShipOverlap(char array[][10], int row, int column, int shipLength, orientation shipDirection)
+bool IsUserShipOverlap(int row, int column, int shipLength, orientation shipDirection)
 {
 	//Limit is used to control the following for loops
 	int limit;
@@ -797,7 +846,7 @@ bool IsUserShipOverlap(char array[][10], int row, int column, int shipLength, or
 
 		for (row; row > limit; --row)
 		{
-			if (array[row][column] == '#')
+			if (user.shipArray[row][column] == '#')
 				return true;
 		}
 
@@ -808,7 +857,7 @@ bool IsUserShipOverlap(char array[][10], int row, int column, int shipLength, or
 
 		for (row; row <= limit; ++row)
 		{
-			if (array[row][column] == '#')
+			if (user.shipArray[row][column] == '#')
 				return true;
 		}
 
@@ -819,7 +868,7 @@ bool IsUserShipOverlap(char array[][10], int row, int column, int shipLength, or
 
 		for (column; column > limit; column--)
 		{
-			if (array[row][column] == '#')
+			if (user.shipArray[row][column] == '#')
 				return true;
 		}
 
@@ -830,7 +879,7 @@ bool IsUserShipOverlap(char array[][10], int row, int column, int shipLength, or
 
 		for (column; column < limit; column++)
 		{
-			if (array[row][column] == '#')
+			if (user.shipArray[row][column] == '#')
 				return true;
 		}
 
@@ -868,7 +917,7 @@ bool IsOutOfBounds(int row, int column, int shipLength, orientation shipDirectio
 	}
 }
 
-void PlaceUserShip(char array[][10], int row, int column, int shipLength, string shipOrientation)
+void PlaceUserShip(int row, int column, int shipLength, string shipOrientation)
 {
 	int limit;
 
@@ -879,7 +928,7 @@ void PlaceUserShip(char array[][10], int row, int column, int shipLength, string
 
 		for (row; row > limit; --row)
 		{
-			array[row][column] = '#';
+			user.shipArray[row][column] = '#';
 		}
 		break;
 
@@ -888,7 +937,7 @@ void PlaceUserShip(char array[][10], int row, int column, int shipLength, string
 
 		for (row; row < limit; row++)
 		{
-			array[row][column] = '#';
+			user.shipArray[row][column] = '#';
 		}
 		break;
 
@@ -897,7 +946,7 @@ void PlaceUserShip(char array[][10], int row, int column, int shipLength, string
 
 		for (column; column > limit; --column)
 		{
-			array[row][column] = '#';
+			user.shipArray[row][column] = '#';
 		}
 		break;
 
@@ -906,7 +955,7 @@ void PlaceUserShip(char array[][10], int row, int column, int shipLength, string
 
 		for (column; column < limit; ++column)
 		{
-			array[row][column] = '#';
+			user.shipArray[row][column] = '#';
 		}
 		break;
 	}
