@@ -5,52 +5,93 @@
 
 using namespace std;
 
+//Typedef for computer and user 10 x 10 arrays
 typedef char gameboard[10][10];
 
 class player {
 
+	//These attributes keep track of hits and misses for the user and the computer
 	float cumulativeHits = 0;
 	float cumulativeMisses = 0;
 
 public:
+	//Two 10 x 10 arrays are generated for both the player and the computer
 	gameboard guessArray;
 	gameboard shipArray;
  
 	void SetNumOfHits(int hits) {cumulativeHits += hits;}
-	void SetNumOfMisses(int misses) {cumulativeMisses += misses;}
-	float GetHits() {return cumulativeHits;}
-	float GetMisses() {return cumulativeMisses;}
-	float PrintAccuracy() {return cumulativeHits / (cumulativeHits + cumulativeMisses);}
+	//Pre:The game has terminated and the number of hits has been passed as an argument
+	//Post The total number of hits during program execution is updated
 
-} user, computer;
+	void SetNumOfMisses(int misses) {cumulativeMisses += misses;}
+	//Pre: The game has terminated and the number of misses has been passed as an argument
+	//Post: The total number of misses during program execution is updated
+
+	float GetHits() {return cumulativeHits;}
+	//Pre: None - initialized to zero
+	//Post: The number hits on enemy ships is printed to the console
+
+	float GetMisses() {return cumulativeMisses;}
+	//Pre: None - initialized to zero
+	//Post: The number of missed shots is printed to the console
+
+	float PrintAccuracy() {return cumulativeHits / (cumulativeHits + cumulativeMisses);}
+	//Pre: None - both cumulative hits and misses are initialized to zero.
+	//Post: Prints the ratio of his to shots taken for both the user and the computer.
+
+} user, computer; //Instantiates two player objects
 
 enum orientation {UP, DOWN, LEFT, RIGHT};
 
 enum shiptype {DESTROYER, SUBMARINE, CRUSIER, BATTLESHIP, CARRIER};
 
 void ComputerSetUp();
+//Pre: Two 10 x 10 char arrays must exist for the function to manipulate.
+//Post: Two 10 x 10 char arrays are initialized for the game - one for the computer's guess grid and another for the comptuer's ship grid.
 
 void UserSetUp();
+//Pre: Two 10 x 10 char arrays must exist fo the function to manipulate.
+//Post: Two 10 x 10 char arrays are initialized for the user - one for the user's guess grid and another for the user's ship grid.
 
 void ComputerTurn(int& computerHits, int& computerMisses);
+//Pre: Gameboards for computer and user must be generated; Counters for computer hits and misses must be initialized and passed by reference as well.
+//Post: A message is printed to the screen stating if the computer landed a hit or not and increments hit and miss counters.
 
 void UserTurn(int& userHits, int& userMisses);
+//Pre: Gameboards for computer and user must be generated; Counters for user hits and misses must be initialized and passed by reference.
+//Post: The user has completed their turn.
 
 void CheckWinConditions(int computerHits, int computerMisses, int userHits, int userMisses, bool hasSurrendered, bool& isEndOfGame, int& numOfLosses, int& numOfWins);
+//Pre: Both the computer and user have completed their turns
+//Post: Function determines whether or not the game is compeleted.
 
 void Menu(bool& hasSurrendered, int& userHits, int& userMisses);
+//Pre: Function is able to reference the computer's ship grid; Function is passed two intitialized counter arguements and an initialized bool arguement.
+//Post: User has completed all allowable actions for their turn.
 
 bool NewGameMenu();
+//Pre: A single game has been completed
+//Post: Function returns whether or not a new game will be started
 
 void Surrender(bool& hasSurrendered);
+//Pre: User has selected "surrender" from the user turn menu and a bool argument determining if the player has surrendered is initialized and passed by reference.
+//Post: The user's choice to surrender has been validated.
 
 bool Fire(char shipGrid[][10], char guessGrid[][10], int xcoordinate, int ycoordinate);
+//Pre: The function has the ability to reference both sets of the computer's and user's grids; Function is passed array indexes of location to fire on
+//Post: Function determines if a ship has been hit and updates guess grids with either 'H' or 'M'
 
-void GenerateComputerGrid();
+void GenerateComputerShipGrid();
+//Pre: Program has access to the computer's ship grid
+//Post: The computer's ship grid is randomly populated with ships with differing orientations
 
 void InitializeDefaultBoard(char emptyArray[][10]);
+//Pre: Program has access to the an empty array of a declared size
+//Post: The array is initailized to contain 10 x 10 grid of water ('~')
 
 void UserShipPlacement();
+//Pre: Function is able to access the user's inititialized blank ship array
+//Post: The user has placed their ships on their ship grid
 
 void ValidateUserInput(int& shipLength);
 
@@ -145,7 +186,7 @@ void ComputerSetUp()
 	InitializeDefaultBoard(computer.shipArray);
 
 	//Randomly select 5 places on the water grid to place a ship
-	GenerateComputerGrid();
+	GenerateComputerShipGrid();
 }
 
 void UserSetUp()
@@ -296,13 +337,14 @@ void Menu(bool& hasSurrendered, int& userHits, int& userMisses)
 
 bool NewGameMenu()
 {
-	char input;
+	string input;
 
 	cout << "\n\nWould you like to start a new game?\n";
 	cout << "Y/N: ";
 	cin >> input;
 
-	while (!cin || (toupper(input) != 'N' && toupper(input) != 'Y'))
+	//While the input stream is not in the failed state or the first letter of the input string is not a 'Y' or a 'N'.
+	while (!cin || (toupper(input[0]) != 'N' && toupper(input[0]) != 'Y'))
 	{
 		cout << "\n*******************************************";
 		cout << "\n\nYour input should either be a 'Y' or an 'N'\a\n";
@@ -311,8 +353,8 @@ bool NewGameMenu()
 		cin >> input;
 	}
 
-	//If user enters an N game loop will be exited.
-	if (input == 'N')
+	//If user enters an N game loop will be exited because this function will return as a false condition for the loop control of the game
+	if (input[0] == 'N')
 		return false;
 	else
 		return true;
@@ -339,13 +381,13 @@ void PrintScoreBoard(int numOfGames, int numOfLosses, int numOfWins)
 
 void Surrender(bool& hasSurrendered)
 {
-	char input;
+	string input;
 
 	cout << "\n\nAre you sure you want to surrender?\n";
 	cout << "Y/N: ";
 	cin >> input;
 
-	if (toupper(input) == 'Y')
+	if (toupper(input[0]) == 'Y')
 		hasSurrendered = true;
 
 }
@@ -408,9 +450,11 @@ bool Fire(char shipGrid[][10], char guessGrid[][10], int xcoordinate, int ycoord
 
 void UserShipPlacement()
 {
+	//hConsole is of type HANDLE, which allows access to manipulate the windows console for coloring and formatting output
 	HANDLE hConsole;
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
+	//Sets console color to white
 	SetConsoleTextAttribute(hConsole, 15);
 
 	cout << "The computer has finished its set-up\n";
@@ -420,6 +464,7 @@ void UserShipPlacement()
 
 
 	int shipLength;
+	//Following for-loop and switch guide player through gameboard set up.
 	for (shiptype ship = DESTROYER; ship <= CARRIER; ship = shiptype(ship + 1))
 	{
 		switch (ship)
@@ -431,6 +476,7 @@ void UserShipPlacement()
 
 			ValidateUserInput(shipLength);
 
+			//Clears board on the console screen after the user has placed a ship.
 			system("cls");
 
 			UpdatedBoardMessage();
@@ -495,7 +541,7 @@ void UserShipPlacement()
 //Array must be a parameter of this function because it is shared by both the user and the computer's gameboards
 void InitializeDefaultBoard(char emptyArray[][10])
 {
-	//Initializes to water '~'
+	//Initializes this array to water '~'
 	for (int i = 0; i < 10; ++i)
 	{
 		for (int j = 0; j < 10; ++j)
@@ -567,9 +613,9 @@ void PrintBoard(char array[][10])
 	SetConsoleTextAttribute(hConsole, 15);
 }
 
-void GenerateComputerGrid()
+void GenerateComputerShipGrid()
 {
-	//Generate the five ship types at with random orientations
+	//shiptype enum is used to iterate through each ship size - using enums for cases made the switch statement's operation clearer
 	for (shiptype ship = DESTROYER; ship <= CARRIER; ship = shiptype(ship + 1))
 	{
 		//Generate a 1 or 2 randomly to determine to orient verically or horizontally.
@@ -582,55 +628,55 @@ void GenerateComputerGrid()
 
 			shipLength = 2;
 
-			if (ranShipOrientation == 1) {
+			if (ranShipOrientation == 1)
 				AddShipVertical(shipLength);
-			}
 			else
 				AddShipHorizontal(shipLength);
+
 			break;
 
 		case SUBMARINE:
 
 			shipLength = 3;
 
-			if (ranShipOrientation == 1) {
+			if (ranShipOrientation == 1)
 				AddShipVertical(shipLength);
-			}
 			else
 				AddShipHorizontal(shipLength);
+
 			break;
 
 		case CRUSIER:
 
 			shipLength = 3;
 
-			if (ranShipOrientation == 1) {
+			if (ranShipOrientation == 1) 
 				AddShipVertical(shipLength);
-			}
 			else
 				AddShipHorizontal(shipLength);
+
 			break;
 
 		case BATTLESHIP:
 
 			shipLength = 4;
 
-			if (ranShipOrientation == 1) {
+			if (ranShipOrientation == 1)
 				AddShipVertical(shipLength);
-			}
 			else
 				AddShipHorizontal(shipLength);
+
 			break;
 
 		case CARRIER:
 
 			shipLength = 5;
 
-			if (ranShipOrientation == 1) {
+			if (ranShipOrientation == 1)
 				AddShipVertical(shipLength);
-			}
 			else
 				AddShipHorizontal(shipLength);
+
 			break;
 		}
 	}
