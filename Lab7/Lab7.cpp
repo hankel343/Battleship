@@ -94,32 +94,60 @@ void UserShipPlacement();
 //Post: The user has placed their ships on their ship grid
 
 void ValidateUserInput(int& shipLength);
+//Pre: The user's ship and guess arrays have been successfully initialized
+//Post: The user's input has been validated and ships have been placed on the user's ship grid.
 
 bool IsValidOrientation(int row, int column, string shipOrientation, int shipLength);
+//Pre: User input has been validated to be of the correct data type and the user's ship array has been declared and initialized.
+//Post: The user's ship orientation has been verified to be with in array bounds and not overlap other ships
 
 void PrintBoard(char array[][10]);
+//Pre: Array to be printed has been declared and initialized
+//Post: The array is output to the screen
 
 void AddShipVertical(int shipLength);
+//Pre: Computer ship array has been declared and initialized
+//Post: A ship is added vertically to the computer's ship array
 
 void AddShipHorizontal(int shipLength);
+//Pre: Computer ship array has been decared and initialized
+//Post: A ship is added horizontally to the computer's ship array
 
 bool IsComputerShipOverlap(int ranRowsorColumns, int shipLength, orientation shipDirection);
+//Pre: Computer ship array has been declared and initialized
+//Post: Computer has verified if there is ship overlap on the computer's ship array
 
 bool IsUserShipOverlap(int row, int column, int shipLength, orientation shipDirection);
+//Pre: User ship array has been declared and inititalized; function is passed user input for array coordinates
+//Post: Computer has verified if there is ship overlap on the user's ship array
 
 bool IsOutOfBounds(int row, int column, int shipLength, orientation shipDirection);
+//Pre: User ship array has been declared and initialized; Function is passed user's array coordinates and ship orientation
+//Post: Computer has verified that the user's array coordinates in conjunction with the orientation of the ship are within the array bounds.
 
 void PlaceUserShip(int row, int column, int shipLength, string shipOrientation);
+//Pre: User ship array has been declared and initalized; Computer has verified that ship placement will be within array bounds and not overlap other ships
+//Post: The user's ships are placed on the board at the given coordinates and orientation
 
 void OutOfBoundsMessage();
+//Pre: User has entered ship coordinates that are outside of the array bounds either by coordinates themselves or with valid coordinates with a orientation that overruns the array bounds
+//Post: A message explaining the user's error is printed to the screen.
 
 void InvalidInputMessage();
+//Pre: User has entered an invalid data type during a prompt.
+//Post: A message explaining the user's error is printed to the screen.
 
 void OverlapMessage();
+//Pre: User has entered ship coordinates and orientation that overlaps with another ship on their board
+//Post: A message explaining the user's error is printed to the screen.
 
 void UpdatedBoardMessage();
+//Pre: User has entered valid coordinates and orientation for their ship.
+//Post: A message telling the user their ship was placed is printed to the screen
 
 void PrintScoreBoard(int numOfGames, int numOfLosses, int numOfWins);
+//Pre: The user has chosen to not start a new game and therefore end program execution
+//Post: A scoreboard of wins, losses, and user statistics are printed to the screen before program exit.
 
 int main()
 {
@@ -686,15 +714,16 @@ void GenerateComputerShipGrid()
 
 void AddShipVertical(int shipLength)
 {
-	bool repeatLoop;
+	//This bool determines if the function body should be repeated with a new random number because the first random number caused overlap
+	bool isShipOverlap;
 	do
 	{
 		//Generate a random column index
 		int ranColumn = rand() % 10;
 
-		repeatLoop = IsComputerShipOverlap(ranColumn, shipLength, UP);
+		isShipOverlap = IsComputerShipOverlap(ranColumn, shipLength, UP);
 
-		if (repeatLoop == false) //If no ship is found in the validation read
+		if (isShipOverlap == false) //If no ship is found in the validation read
 		{
 			for (shipLength; shipLength > 0; --shipLength)
 			{
@@ -702,20 +731,23 @@ void AddShipVertical(int shipLength)
 			}
 		}
 
-	} while (repeatLoop);
+	} while (isShipOverlap);
 }
 
 void AddShipHorizontal(int shipLength)
 {
-	bool repeatLoop;
+	//This bool determines if the function body should be repeated with a new random number because the first random number caused overlap
+	bool isShipOverlap;
 	do
 	{
 		//Generate a random row index
 		int ranRow = rand() % 10;
 
-		repeatLoop = IsComputerShipOverlap(ranRow, shipLength, LEFT);
+		//IsComputerShipOverlap() will return a bool value that determines if there is ship overlap or not
+		isShipOverlap = IsComputerShipOverlap(ranRow, shipLength, LEFT);
 
-		if (repeatLoop == false)
+		//If there wasn't ship overlap
+		if (isShipOverlap == false)
 		{
 			//creates ship horizontally
 			for (shipLength; shipLength > 0; --shipLength)
@@ -723,7 +755,7 @@ void AddShipHorizontal(int shipLength)
 				computer.shipArray[ranRow][shipLength] = '#';
 			}
 		}
-	} while (repeatLoop);
+	} while (isShipOverlap);
 
 }
 
@@ -760,7 +792,7 @@ bool IsComputerShipOverlap(int ranRowsorColumns, int shipLength, orientation shi
 void ValidateUserInput(int& shipLength)
 {
 	//This bool is a loop control that is set to true if the user has overlapping ships or out-of-bounds ships
-	bool isInvalidInput;
+	bool isValidInput;
 
 	//Identifiers for user input
 	int row;
@@ -769,11 +801,12 @@ void ValidateUserInput(int& shipLength)
 
 	do
 	{
-		isInvalidInput = false;
+		isValidInput = false;
 
 		cout << "\nEnter the starting x-coordinate for your ship: ";
 		cin >> column;
 
+		//Loops while user provides invalid input
 		while (!cin || column < 0 || column > 10)
 		{
 			cin.clear();
@@ -786,6 +819,7 @@ void ValidateUserInput(int& shipLength)
 		cout << "\nEnter the starting y-coordinate for your ship: ";
 		cin >> row;
 
+		//Loops while user provides invalid input
 		while (!cin || row < 0 || row > 10)
 		{
 			cin.clear();
@@ -811,72 +845,75 @@ void ValidateUserInput(int& shipLength)
 		column--;
 
 		//Checks for out of array bounds or ship overlap
-		isInvalidInput = IsValidOrientation(row, column, shipOrientation, shipLength);
+		isValidInput = IsValidOrientation(row, column, shipOrientation, shipLength);
 
-		if (isInvalidInput == false)
-		{
-
+		//If input array indexes are not invalid
+		if (isValidInput == true)
 			PlaceUserShip(row, column, shipLength, shipOrientation);
-		}
 		
-	} while (isInvalidInput); //If overlap or out-of-array bounds then this function loops until the user enters valid data
+	} while (!isValidInput); //If overlap or out-of-array bounds then this function loops until the user enters valid data
 }
 
 bool IsValidOrientation(int row, int column, string shipOrientation, int shipLength)
 {
+	//Switches off of the capitalized first letter of string shipOrientation that the user provides
 	switch (toupper(shipOrientation[0]))
 	{
 	case 'U':
 
+		//If the user's input is out of array bounds or overlaps with another ship on the board with an updward orientation
 		if (IsOutOfBounds(row, column, shipLength, UP) == true || IsUserShipOverlap(row, column, shipLength, UP) == true)
 		{
-
+			//Print error message and board 
 			OutOfBoundsMessage();
 			PrintBoard(user.shipArray);
 
-			return true;
+			return false;
 		}
 
-		return false;
+		return true;
 
 	case 'D':
 
+		//If the user's input is out of array bounds or overlaps with another ship on the board with a downward orientation
 		if (IsOutOfBounds(row, column, shipLength, DOWN) == true || IsUserShipOverlap(row, column, shipLength, DOWN) == true)
 		{
-
+			//Print error message and board 
 			OutOfBoundsMessage();
 			PrintBoard(user.shipArray);
 
-			return true;
+			return false;
 		}
 
-		return false;
+		return true;
 
 	case 'L':
 
+		//If the user's input is out of array bounds or overlaps with another ship on the board with a leftward orientation
 		if (IsOutOfBounds(row, column, shipLength, LEFT) == true || IsUserShipOverlap(row, column, shipLength, LEFT) == true)
 		{
-
+			//Print error message and board 
 			OutOfBoundsMessage();
 			PrintBoard(user.shipArray);
 
-			return true;
+			return false;
 		}
 
-		return false;
+		return true;
 
 	case 'R':
 
+		//If The user's input is out of array bounds or overlaps with another ship on the board with a rightward orientation
 		if (IsOutOfBounds(row, column, shipLength, RIGHT) == true || IsUserShipOverlap(row, column, shipLength, RIGHT) == true)
 		{
-
+			//Print error message and board 
 			OutOfBoundsMessage();
 			PrintBoard(user.shipArray);
 
-			return true;
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 }
 
