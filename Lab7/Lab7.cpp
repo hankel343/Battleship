@@ -1,3 +1,14 @@
+/*
+ *Hankel Haldin
+ *Lab 7: Battleship
+ *Due: 12/2/2020
+ * 
+ *Lab Description: Program models the boardgame Battleship. Four 10 x 10 char arrays are used to represent the user's -
+ * and computer's ship and guess gameboards. The computer's set up is randomly generated via random numbers for array -
+ * indexes which are checked for valid array bounds. The user is able to place their ships on the grid aslong as they -
+ * are within array bounds. Both the user's and computer's arrays are updated every turn.
+ */
+
 #include <iostream>
 #include <time.h>
 #include <Windows.h>
@@ -8,7 +19,8 @@ using namespace std;
 //Typedef for computer and user 10 x 10 arrays
 typedef char gameboard[10][10];
 
-class player {
+//Declaration of Player class
+class Player {
 
 	//These attributes keep track of hits and misses for the user and the computer
 	float cumulativeHits = 0;
@@ -151,6 +163,7 @@ void PrintScoreBoard(int numOfGames, int numOfLosses, int numOfWins);
 
 int main()
 {
+	//Seeds clock for random number generation.
 	srand(unsigned int(time(NULL)));
 
 	//Boolean data types for loop control in main()
@@ -158,7 +171,7 @@ int main()
 	bool isEndOfGame;
 	bool hasSurrendered;
 	
-	//Track game progress.
+	//These identifiers track game progress.
 	int numOfGames = 1;
 	int numOfWins = 0;
 	int numOfLosses = 0;
@@ -166,6 +179,8 @@ int main()
 	int userMisses;
 	int computerHits;
 	int computerMisses;
+	
+	//Begin game loop.
 	do
 	{
 		system("cls");
@@ -185,18 +200,26 @@ int main()
 		isEndOfGame = false;
 		hasSurrendered = false;
 
+		//Interactive portion of the game.
 		do
 		{
+			//Computer fires and updates guess grid.
 			ComputerTurn(computerHits, computerMisses);
 
+			//User fires and updates guess grid.
 			Menu(hasSurrendered, userHits, userMisses);
 
+			//Game end conditions are checked to verify if it is the end of the game.
 			CheckWinConditions(computerHits, computerMisses, userHits, userMisses, hasSurrendered, isEndOfGame, numOfLosses, numOfWins);
 
 		} while (!isEndOfGame);
 
+		//User is prompted for a new game in NewGameMenu().
+		//If yes - new set up from top of loop.
+		//If no - Scoreboard is printed and program terminates.
 	} while (NewGameMenu());
 
+	//End of game loop.
 	PrintScoreBoard(numOfGames, numOfLosses, numOfWins);
 
 	cout << "\n\nGoodbye...\n";
@@ -206,7 +229,6 @@ int main()
 
 void ComputerSetUp()
 {
-
 	//Sets empty 10 x 10 array to water ('~') for computer guess grid
 	InitializeDefaultBoard(computer.guessArray);
 
@@ -219,7 +241,6 @@ void ComputerSetUp()
 
 void UserSetUp()
 {
-	
 	//Initialize user's guess grid to water ('~')
 	InitializeDefaultBoard(user.guessArray);
 
@@ -237,8 +258,7 @@ void ComputerTurn(int& computerHits, int& computerMisses)
 	int ranXCoordinate = rand() % 10 + 1;
 	int ranYCoordinate = rand() % 10 + 1;
 
-	if (Fire(user.shipArray, computer.guessArray, ranXCoordinate, ranYCoordinate) == true) //If there is a '#' at the random coordinates that computer has generated.
-	{
+	if (Fire(user.shipArray, computer.guessArray, ranXCoordinate, ranYCoordinate) == true) { //If there is a '#' at the random coordinates that computer has generated.
 		cout << "\nThe computer landed a hit!\n\n";
 		computerHits++;
 	}
@@ -251,15 +271,18 @@ void ComputerTurn(int& computerHits, int& computerMisses)
 
 void UserTurn(int& userHits, int& userMisses)
 {
+	//Handle is used to communicate with the windows console which the game is running in
 	HANDLE hConsole;
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
+	//Identifiers for user's input coordinates
 	int xcoordinate;
 	int ycoordinate;
 
 	cout << "\n\nEnter the x-coordinate you want to fire on: ";
 	cin >> xcoordinate;
 
+	//While user has entered invalid data or out-of-range values
 	while (!cin || xcoordinate < 1 || xcoordinate > 10)
 	{
 		cin.clear();
@@ -272,6 +295,7 @@ void UserTurn(int& userHits, int& userMisses)
 	cout << "\n\nEnter the y-coordinate you want to fire on: ";
 	cin >> ycoordinate;
 
+	//While user has entered invalid data or out-of-range values
 	while (!cin || ycoordinate < 1 || ycoordinate > 10)
 	{
 		cin.clear();
@@ -299,7 +323,9 @@ void UserTurn(int& userHits, int& userMisses)
 
 void Menu(bool& hasSurrendered, int& userHits, int& userMisses)
 {
+	//Stores user input for following menu
 	int selection;
+	//Bool controls whether or not the user has completed their turn
 	bool isEndOfTurn;
 
 	cout << "Here is your guess grid: \n";
@@ -365,6 +391,7 @@ void Menu(bool& hasSurrendered, int& userHits, int& userMisses)
 
 bool NewGameMenu()
 {
+	//I chose a string for input type because any additional characters would not overrun cin
 	string input;
 
 	cout << "\n\nWould you like to start a new game?\n";
@@ -392,16 +419,16 @@ void PrintScoreBoard(int numOfGames, int numOfLosses, int numOfWins)
 {
 	system("cls");
 	cout << "Here are your final stats for the program duration: \n";
-	cout << "Total games: " << numOfGames << endl;
+	cout << "\nTotal games: " << numOfGames << endl;
 	cout << "Number of wins: " << numOfWins << endl;
 	cout << "Number of losses: " << numOfLosses << endl;
 	cout << "\n*********************************\n";
-	cout << "\nComputer stats: \n";
+	cout << "Computer stats: \n";
 	cout << "Cumulative number of hits: " << computer.GetHits() << endl;
 	cout << "Cumulative number of misses: " << computer.GetMisses() << endl;
 	cout << setprecision(2) << "Accuracy: " << computer.PrintAccuracy() << '%' << endl;
 	cout << "\n*********************************\n";
-	cout << "\nUser stats: \n";
+	cout << "User stats: \n";
 	cout << "Cumulative number of hits: " << user.GetHits() << endl;
 	cout << "Cumulative number of misses: " << user.GetMisses() << endl;
 	cout << setprecision(2) << "Accuracy: " << user.PrintAccuracy() << '%' << endl;
@@ -422,6 +449,7 @@ void Surrender(bool& hasSurrendered)
 
 void CheckWinConditions(int computerHits, int computerMisses, int userHits, int userMisses, bool hasSurrendered, bool& isEndOfGame, int& numOfLosses, int &numOfWins)
 {
+	//If the computer sinks all of the user's ships or the user surrenders mid-game
 	if (computerHits == 17 || hasSurrendered == true) {
 
 		isEndOfGame = true;
@@ -440,7 +468,7 @@ void CheckWinConditions(int computerHits, int computerMisses, int userHits, int 
 
 		PrintBoard(computer.shipArray);
 	}
-	else if (userHits == 17) {
+	else if (userHits == 17) { //If user sinks all the computer's ships
 
 		isEndOfGame = true;
 
@@ -489,7 +517,6 @@ void UserShipPlacement()
 	cout << "You need to do the same with the following board: \n";
 
 	PrintBoard(user.shipArray);
-
 
 	int shipLength;
 	//Following for-loop and switch guide player through gameboard set up.
