@@ -9,6 +9,7 @@
  * are within array bounds. Both the user's and computer's arrays are updated every turn.
  */
 
+#include "Player.h"
 #include <iostream>
 #include <time.h>
 #include <Windows.h>
@@ -16,42 +17,8 @@
 
 using namespace std;
 
-//Typedef for computer and user 10 x 10 arrays
-typedef char gameboard[10][10];
-
-//Declaration of Player class
-class Player {
-
-	//These attributes keep track of hits and misses for the user and the computer
-	float cumulativeHits = 0;
-	float cumulativeMisses = 0;
-
-public:
-	//Two 10 x 10 arrays are generated for both the player and the computer
-	gameboard guessArray;
-	gameboard shipArray;
- 
-	void SetNumOfHits(int hits) {cumulativeHits += hits;}
-	//Pre:The game has terminated and the number of hits has been passed as an argument
-	//Post The total number of hits during program execution is updated
-
-	void SetNumOfMisses(int misses) {cumulativeMisses += misses;}
-	//Pre: The game has terminated and the number of misses has been passed as an argument
-	//Post: The total number of misses during program execution is updated
-
-	float GetHits() {return cumulativeHits;}
-	//Pre: None - initialized to zero
-	//Post: The number hits on enemy ships is printed to the console
-
-	float GetMisses() {return cumulativeMisses;}
-	//Pre: None - initialized to zero
-	//Post: The number of missed shots is printed to the console
-
-	float PrintAccuracy() {return cumulativeHits / (cumulativeHits + cumulativeMisses);}
-	//Pre: None - both cumulative hits and misses are initialized to zero.
-	//Post: Prints the ratio of his to shots taken for both the user and the computer.
-
-} user, computer; //Instantiates two player objects
+//Specified in Player.h and implemented in Player.cpp
+Player user, computer; //Instantiates two player objects
 
 enum orientation {UP, DOWN, LEFT, RIGHT};
 
